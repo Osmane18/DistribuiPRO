@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DistribuiPRO – Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body class="auth-page">
+
+<div class="auth-bg">
+  <div class="auth-shape s1"></div>
+  <div class="auth-shape s2"></div>
+  <div class="auth-shape s3"></div>
+</div>
+
+<div class="auth-container">
+
+  <!-- LOGO -->
+  <div class="auth-brand">
+    <div class="auth-logo">📦</div>
+    <h1>DistribuiPRO</h1>
+    <p>Sistema de Pedidos para Distribuidoras</p>
+  </div>
+
+  <!-- CARD LOGIN -->
+  <div class="auth-card" id="card-login">
+    <h2>Entrar na conta</h2>
+    <p class="auth-sub">Acesse o sistema com seu e-mail e senha</p>
+
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+
+    <div id="login-erro" class="msg-erro hidden"></div>
+
+    <button class="btn btn-primary btn-full" id="btn-entrar" onclick="fazerLogin()">
+      <span class="btn-text">Entrar</span>
+      <span class="btn-loader hidden">⏳</span>
+    </button>
+
+    <div class="auth-divider"><span>ou</span></div>
+
+    <button class="btn btn-outline btn-full" onclick="mostrarCadastro()">
+      Criar nova conta
+    </button>
+  </div>
+
+  <!-- CARD CADASTRO -->
+  <div class="auth-card hidden" id="card-cadastro">
+    <h2>Criar conta</h2>
+    <p class="auth-sub">Preencha os dados para se cadastrar</p>
+
+    <div class="field">
+      <label>Nome completo</label>
+      <input type="text" id="cad-nome" placeholder="Seu nome"/>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="cad-email" placeholder="seu@email.com"/>
+    </div>
+    <div class="field">
+      <label>Senha (mín. 6 caracteres)</label>
+      <input type="password" id="cad-senha" placeholder="••••••••"/>
+    </div>
+    <div class="field">
+      <label>Confirmar senha</label>
+      <input type="password" id="cad-senha2" placeholder="••••••••"/>
+    </div>
+
+    <div id="cad-erro" class="msg-erro hidden"></div>
+    <div id="cad-ok" class="msg-ok hidden"></div>
+
+    <button class="btn btn-primary btn-full" onclick="fazerCadastro()">
+      Criar conta
+    </button>
+
+    <div class="auth-divider"><span>ou</span></div>
+
+    <button class="btn btn-outline btn-full" onclick="mostrarLogin()">
+      Já tenho conta — Entrar
+    </button>
+  </div>
+
+  <p class="auth-footer">DistribuiPRO © 2026 · Dados salvos no Firebase</p>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ─── COLE AQUI A SUA CONFIGURAÇÃO DO FIREBASE ───────────────────────────
+  import { firebaseConfig } from "./firebase-config.js";
+  // ────────────────────────────────────────────────────────────────────────
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // Se já está logado, redireciona
+  onAuthStateChanged(auth, user => {
+    if (user) window.location.href = "app.html";
+  });
+
+  // ── LOGIN ────────────────────────────────────────────
+  window.fazerLogin = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const senha = document.getElementById('login-senha').value;
+    const erro  = document.getElementById('login-erro');
+    erro.classList.add('hidden');
+
+    if (!email || !senha) { mostrarErro(erro, 'Preencha e-mail e senha.'); return; }
+
+    setBtnLoading('btn-entrar', true);
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      window.location.href = "app.html";
+    } catch(e) {
+      setBtnLoading('btn-entrar', false);
+      mostrarErro(erro, traduzirErroFirebase(e.code));
+    }
+  };
+
+  // ── CADASTRO ──────────────────────────────────────────
+  window.fazerCadastro = async () => {
+    const nome  = document.getElementById('cad-nome').value.trim();
+    const email = document.getElementById('cad-email').value.trim();
+    const senha = document.getElementById('cad-senha').value;
+    const senha2= document.getElementById('cad-senha2').value;
+    const erro  = document.getElementById('cad-erro');
+    const ok    = document.getElementById('cad-ok');
+    erro.classList.add('hidden'); ok.classList.add('hidden');
+
+    if (!nome)  { mostrarErro(erro, 'Informe seu nome.'); return; }
+    if (!email) { mostrarErro(erro, 'Informe o e-mail.'); return; }
+    if (senha.length < 6) { mostrarErro(erro, 'Senha deve ter ao menos 6 caracteres.'); return; }
+    if (senha !== senha2) { mostrarErro(erro, 'As senhas não coincidem.'); return; }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      await setDoc(doc(db, 'usuarios', cred.user.uid), {
+        nome, email, criadoEm: new Date().toISOString()
+      });
+      ok.textContent = '✅ Conta criada! Redirecionando...';
+      ok.classList.remove('hidden');
+      setTimeout(() => window.location.href = "app.html", 1500);
+    } catch(e) {
+      mostrarErro(erro, traduzirErroFirebase(e.code));
+    }
+  };
+
+  // ── HELPERS ───────────────────────────────────────────
+  window.mostrarCadastro = () => {
+    document.getElementById('card-login').classList.add('hidden');
+    document.getElementById('card-cadastro').classList.remove('hidden');
+  };
+  window.mostrarLogin = () => {
+    document.getElementById('card-cadastro').classList.add('hidden');
+    document.getElementById('card-login').classList.remove('hidden');
+  };
+
+  function mostrarErro(el, msg) { el.textContent = '⚠️ ' + msg; el.classList.remove('hidden'); }
+  function setBtnLoading(id, on) {
+    const btn = document.getElementById(id);
+    btn.querySelector('.btn-text').classList.toggle('hidden', on);
+    btn.querySelector('.btn-loader').classList.toggle('hidden', !on);
+    btn.disabled = on;
+  }
+  function traduzirErroFirebase(code) {
+    const m = {
+      'auth/user-not-found': 'Usuário não encontrado.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/invalid-email': 'E-mail inválido.',
+      'auth/email-already-in-use': 'E-mail já cadastrado.',
+      'auth/weak-password': 'Senha muito fraca (mín. 6 caracteres).',
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarde um momento.',
+    };
+    return m[code] || 'Erro: ' + code;
+  }
+
+  // Entrar com Enter
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (!document.getElementById('card-login').classList.contains('hidden')) fazerLogin();
+      else fazerCadastro();
+    }
+  });
+</script>
+</body>
+</html>

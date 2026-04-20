@@ -51,6 +51,7 @@
     <button class="btn-menu" onclick="toggleSidebar()">☰</button>
     <h1 class="topbar-title" id="page-title">Pedidos</h1>
     <div class="topbar-right">
+      <a href="pdv.html" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;text-decoration:none;margin-right:8px">🏪 Abrir PDV</a>
       <span class="sync-badge" id="sync-badge">● Online</span>
     </div>
   </header>
@@ -169,10 +170,11 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-head"><span class="card-icon" id="prod-form-icon">➕</span> <span id="prod-form-titulo">Novo Produto</span></div>
-          <div class="field"><label>Nome *</label><input type="text" id="prod-nome" placeholder="Ex: Balão Metalizado 40cm"/></div>
-          <div class="field"><label>Categoria</label><input type="text" id="prod-categoria" placeholder="Ex: Balões, Decoração..."/></div>
+          <div class="field"><label>Nome *</label><input type="text" id="prod-nome" placeholder="Ex: Água 20L, Gás 13kg..."/></div>
+          <div class="field"><label>Código de Barras</label><input type="text" id="prod-codigo" placeholder="Ex: 7891234567890"/></div>
+          <div class="field"><label>Categoria</label><input type="text" id="prod-categoria" placeholder="Ex: Água, Gás, Bebida..."/></div>
           <div class="field"><label>Preço (R$) *</label><input type="number" id="prod-preco" step="0.01" min="0" placeholder="0,00"/></div>
-          <div class="field"><label>Unidade</label><input type="text" id="prod-unidade" placeholder="unidade, pacote, caixa..."/></div>
+          <div class="field"><label>Unidade</label><input type="text" id="prod-unidade" placeholder="unidade, galão, botijão..."/></div>
           <input type="hidden" id="prod-id"/>
           <div class="form-btns">
             <button class="btn btn-ghost" onclick="cancelarProduto()">Cancelar</button>
@@ -331,6 +333,7 @@
   // ── PRODUTOS ──────────────────────────────────────────────────────────
   window.salvarProduto = () => {
     const nome      = document.getElementById('prod-nome').value.trim();
+    const codigo    = document.getElementById('prod-codigo').value.trim();
     const categoria = document.getElementById('prod-categoria').value.trim();
     const preco     = parseFloat(document.getElementById('prod-preco').value);
     const unidade   = document.getElementById('prod-unidade').value.trim() || 'unidade';
@@ -341,10 +344,10 @@
 
     if (id) {
       const idx = produtos.findIndex(p => p.id === id);
-      produtos[idx] = { id, nome, categoria, preco, unidade };
+      produtos[idx] = { id, nome, codigo, categoria, preco, unidade };
       toast('Produto atualizado!');
     } else {
-      produtos.push({ id: uid(), nome, categoria, preco, unidade, criadoEm: new Date().toISOString() });
+      produtos.push({ id: uid(), nome, codigo, categoria, preco, unidade, criadoEm: new Date().toISOString() });
       toast('Produto cadastrado!');
     }
     DB.set('dpro_produtos', produtos);
@@ -357,6 +360,7 @@
     const p = produtos.find(p => p.id === id); if (!p) return;
     document.getElementById('prod-id').value        = p.id;
     document.getElementById('prod-nome').value      = p.nome;
+    document.getElementById('prod-codigo').value    = p.codigo || '';
     document.getElementById('prod-categoria').value = p.categoria || '';
     document.getElementById('prod-preco').value     = p.preco;
     document.getElementById('prod-unidade').value   = p.unidade;
@@ -374,7 +378,7 @@
   };
 
   window.cancelarProduto = () => {
-    ['prod-id','prod-nome','prod-categoria','prod-preco','prod-unidade'].forEach(i => document.getElementById(i).value = '');
+    ['prod-id','prod-nome','prod-codigo','prod-categoria','prod-preco','prod-unidade'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('prod-form-titulo').textContent = 'Novo Produto';
     document.getElementById('prod-form-icon').textContent   = '➕';
   };

@@ -26,6 +26,11 @@ a{text-decoration:none}
 .btn-hero.outline:hover{border-color:#4ade80;color:#4ade80}
 .selos{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .selo{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:8px 18px;font-size:13px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:6px}
+.scroll-down{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;opacity:.7;transition:.2s}
+.scroll-down:hover{opacity:1}
+.scroll-down span{font-size:12px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.scroll-down .seta{width:28px;height:28px;border-right:3px solid rgba(255,255,255,.6);border-bottom:3px solid rgba(255,255,255,.6);transform:rotate(45deg);animation:bounce 1.5s infinite}
+@keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
 
 /* ── DESTAQUES ── */
 .destaques{background:#f8fafc;padding:80px 20px}
@@ -127,6 +132,10 @@ footer strong{color:#4ade80}
     <div class="selo">✅ Sem nota fiscal</div>
     <div class="selo">✅ Sem burocracia</div>
     <div class="selo">🔒 Dados seguros</div>
+  </div>
+  <div class="scroll-down" onclick="document.querySelector('.destaques').scrollIntoView({behavior:'smooth'})">
+    <span>Ver mais</span>
+    <div class="seta"></div>
   </div>
 </section>
 

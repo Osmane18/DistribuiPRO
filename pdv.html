@@ -318,6 +318,40 @@ input,select,textarea{font-family:'Sora',sans-serif}
   </div>
 </div>
 
+<!-- ══════════ MODAL CADASTRO RÁPIDO ══════════ -->
+<div class="modal-overlay hidden" id="modal-cadastro-rapido">
+  <div class="modal" style="max-width:400px">
+    <h2>📦 Produto não encontrado</h2>
+    <p>Código lido não está cadastrado. Cadastre agora e já adiciona na venda!</p>
+    <div class="field">
+      <label>Código de Barras</label>
+      <input type="text" id="cr-codigo" readonly
+        style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:12px 14px;color:#4ade80;font-size:15px;font-weight:700;letter-spacing:2px"/>
+    </div>
+    <div class="field">
+      <label>Nome do Produto *</label>
+      <input type="text" id="cr-nome" placeholder="Ex: Água 500ml, Gás 13kg..."
+        style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:15px;outline:none"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field">
+        <label>Preço (R$) *</label>
+        <input type="number" id="cr-preco" min="0" step="0.01" placeholder="0,00"
+          style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:15px;outline:none"/>
+      </div>
+      <div class="field">
+        <label>Unidade</label>
+        <input type="text" id="cr-unidade" placeholder="unidade"
+          style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:15px;outline:none"/>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="fecharModal('modal-cadastro-rapido');focarCodigo()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="salvarCadastroRapido()">💾 Salvar e Adicionar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -441,6 +475,14 @@ function onCodigoInput(e) {
     adicionarProduto(exato);
     this.value = '';
     ocultarBusca();
+    return;
+  }
+
+  // Código parece ser de leitor (só números, 8+ dígitos) e não foi encontrado
+  const pareceCodigoBarras = /^\d{8,}$/.test(val);
+  if (pareceCodigoBarras) {
+    ocultarBusca();
+    abrirCadastroRapido(val);
     return;
   }
 
@@ -720,6 +762,37 @@ function confirmarFechamento() {
   fecharModal('modal-fechamento');
   toast('Caixa fechado!', 'warn');
   setTimeout(() => { mostrarScreen('screen-login'); document.getElementById('login-senha').value = ''; }, 1200);
+}
+
+// ── CADASTRO RÁPIDO ───────────────────────────────────────────────────────────
+function abrirCadastroRapido(codigo) {
+  document.getElementById('cr-codigo').value  = codigo;
+  document.getElementById('cr-nome').value    = '';
+  document.getElementById('cr-preco').value   = '';
+  document.getElementById('cr-unidade').value = '';
+  document.getElementById('codigo-input').value = '';
+  abrirModal('modal-cadastro-rapido');
+  setTimeout(() => document.getElementById('cr-nome').focus(), 100);
+}
+
+function salvarCadastroRapido() {
+  const codigo  = document.getElementById('cr-codigo').value.trim();
+  const nome    = document.getElementById('cr-nome').value.trim();
+  const preco   = parseFloat(document.getElementById('cr-preco').value);
+  const unidade = document.getElementById('cr-unidade').value.trim() || 'unidade';
+
+  if (!nome)        { toast('Informe o nome do produto', 'err'); return; }
+  if (isNaN(preco) || preco <= 0) { toast('Informe um preço válido', 'err'); return; }
+
+  const novoProduto = { id: uid(), nome, codigo, preco, unidade, categoria: '', criadoEm: new Date().toISOString() };
+  const produtos = DB.get('dpro_produtos', []);
+  produtos.push(novoProduto);
+  DB.set('dpro_produtos', produtos);
+
+  fecharModal('modal-cadastro-rapido');
+  adicionarProduto(novoProduto);
+  toast('Produto cadastrado e adicionado! ✓', 'ok');
+  focarCodigo();
 }
 
 // ── MODAIS ────────────────────────────────────────────────────────────────────
